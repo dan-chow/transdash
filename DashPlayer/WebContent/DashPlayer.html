@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="UTF-8">
+	<title>Dash Player</title>
+	<script src="js/dash.all.min.js"></script>
+	<link rel="stylesheet" type="text/css" href="css/main.css">
+	<script>
+		function init(){
+			var url = "http://rdmedia.bbc.co.uk/dash/ondemand/testcard/1/client_manifest-events.mpd";
+			var player = dashjs.MediaPlayer().create();
+			player.initialize(document.querySelector("video"), url, true);
+		}
+		
+	</script>
+</head>
+<body onload="init()">
+	<video controls></video>
+</body>
+</html>
