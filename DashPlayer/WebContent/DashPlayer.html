@@ -1,20 +1,24 @@
 <!DOCTYPE html>
 <html>
-<head>
-	<meta charset="UTF-8">
-	<title>Dash Player</title>
-	<script src="js/dash.all.min.js"></script>
-	<link rel="stylesheet" type="text/css" href="css/main.css">
-	<script>
-		function init(){
-			var url = "http://rdmedia.bbc.co.uk/dash/ondemand/testcard/1/client_manifest-events.mpd";
-			var player = dashjs.MediaPlayer().create();
-			player.initialize(document.querySelector("video"), url, true);
-		}
+
+	<head>
+		<meta charset="UTF-8">
+		<title>Dash Player Test</title>
+		<script src="js/dash.all.min.js"></script>
+		<script src="js/data.collector.js"></script>
+		<link rel="stylesheet" type="text/css" href="css/main.css">
+	</head>
+
+	<body onload="init()">
+		<div class="videoPanel">
+			<video id="myVideo"></video>
 		
-	</script>
-</head>
-<body onload="init()">
-	<video controls></video>
-</body>
+			<div class="controlPanel">
+		  		<h1>Control</h1>
+		  		<p>Click test button and wait...</p>
+		  		<button id="controlBtn" onclick="start()">Test</button>
+			</div>
+		</div>
+	</body>
+
 </html>
