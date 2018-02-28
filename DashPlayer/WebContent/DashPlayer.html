@@ -4,19 +4,20 @@
 	<head>
 		<meta charset="UTF-8">
 		<title>Dash Player Test</title>
-		<script src="js/dash.all.min.js"></script>
-		<script src="js/data.collector.js"></script>
-		<link rel="stylesheet" type="text/css" href="css/main.css">
+		<script type="text/javascript" src="res/js/dash.all.min.js"></script>
+		<script type="text/javascript" src="res/js/dash.qoe.tester.js"></script>
+		<link rel="stylesheet" type="text/css" href="res/css/main.css">
 	</head>
 
 	<body onload="init()">
-		<div class="videoPanel">
-			<video id="myVideo"></video>
+		<div class="contentWrapper">
+		<!--- poster="res/img/bg.jpg" --->
+			<video id="videoTag"></video>
 		
 			<div class="controlPanel">
 		  		<h1>Control</h1>
 		  		<p>Click test button and wait...</p>
-		  		<button id="controlBtn" onclick="start()">Test</button>
+		  		<button id="buttonTag" onclick="start()">Test</button>
 			</div>
 		</div>
 	</body>
