@@ -1,0 +1,12 @@
+/bin/
+
+.classpath
+.project
+
+*.m4s
+*.mp4
+
+!4-init.mp4
+!4-35.m4s
+!tmp.mp4
+
