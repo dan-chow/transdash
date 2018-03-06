@@ -8,7 +8,19 @@ var player = {};
 var videoSource = "http://114.212.84.179:8080/video/result.mpd";
 var isAutoPlay = false;
 
+var proxyUrl='http://114.212.85.243:8080/DashProxy/proxy?url='
 function init() {
+
+	(function(open) {
+		XMLHttpRequest.prototype.open = function() {
+			console.log(arguments);
+			arguments[1] = proxyUrl + encodeURIComponent(arguments[1]);
+			console.log(arguments);
+			open.apply(this, arguments);
+		};
+	})(XMLHttpRequest.prototype.open);
+
+
 	videoTag = document.getElementById("videoTag");
 	buttonTag = document.getElementById("buttonTag");
 
