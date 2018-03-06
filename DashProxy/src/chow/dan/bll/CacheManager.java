@@ -3,10 +3,12 @@ package chow.dan.bll;
 import org.apache.commons.jcs.JCS;
 import org.apache.commons.jcs.access.CacheAccess;
 
+import chow.dan.common.Content;
+
 public class CacheManager {
 
 	private static volatile CacheManager manager;
-	private static CacheAccess<String, String> cacheAccess;
+	private CacheAccess<String, Content> cacheAccess;
 
 	private CacheManager() {
 		cacheAccess = JCS.getInstance("testCache1");
@@ -24,11 +26,15 @@ public class CacheManager {
 		return manager;
 	}
 
-	public String get(String key) {
+	public boolean contains(String key) {
+		return cacheAccess.get(key) != null;
+	}
+
+	public Content get(String key) {
 		return cacheAccess.get(key);
 	}
 
-	public void put(String key, String value) {
+	public void put(String key, Content value) {
 		cacheAccess.put(key, value);
 	}
 

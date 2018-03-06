@@ -1,64 +1,76 @@
 package chow.dan.bll;
 
 import java.io.IOException;
-import java.util.concurrent.ConcurrentHashMap;
 
-import javax.xml.bind.JAXBContext;
-import javax.xml.bind.JAXBException;
-import javax.xml.bind.Unmarshaller;
-
-import org.apache.commons.io.IOUtils;
-
-import chow.dan.mpd.MPD;
+import chow.dan.bll.SegmentData.Segment;
+import chow.dan.common.Content;
+import chow.dan.dash.DashTranscoder;
 
 public class ContentManager {
 
-	private static ConcurrentHashMap<String, SegmentData> uriDataMap = new ConcurrentHashMap<>();
-
-	public static String getMpd(String uri) throws IOException, JAXBException {
-		String mpd = getFromCache(uri);
-		if (mpd == null) {
-			mpd = downloadAndCache(uri);
-		}
-		return mpd;
-	}
-
-	private static String getFromCache(String uri) throws IOException {
-		return CacheManager.getInstance().get(uri);
-	}
-
-	private static String downloadAndCache(String uri) throws IOException, JAXBException {
-		String content = Downloader.Download(uri);
-		CacheManager.getInstance().put(uri, content);
-		String baseUrl = uri.substring(0, uri.lastIndexOf('/'));
-		uriDataMap.put(baseUrl, new SegmentData(parseMpd(content)));
-		return content;
-	}
-
-	public static MPD parseMpd(String mpdFile) throws JAXBException, IOException {
-		JAXBContext context = JAXBContext.newInstance(MPD.class);
-		Unmarshaller unmarshaller = context.createUnmarshaller();
-		return (MPD) unmarshaller.unmarshal(IOUtils.toInputStream(mpdFile, "UTF-8"));
-	}
-
-	public static String getSegment(String uri) throws IOException, JAXBException {
-		String content = getFromCache(uri);
+	public static Content get(String uri) throws IOException {
+		Content content = getFromCache(uri);
 		if (content == null) {
-			String baseUri = uri.substring(0, uri.lastIndexOf('/') + 1);
-			String file = uri.substring(uri.lastIndexOf('/') + 1);
-			SegmentData data = uriDataMap.get(baseUri);
-
-			String newUri = baseUri + data.getSegment(file);
-			System.out.println(newUri);
-
-			// TODO
-			// if (found(data) != null)
-			// transform
-			// else
-			// download
-
 			content = downloadAndCache(uri);
 		}
 		return content;
 	}
+
+	private static Content getFromCache(String uri) {
+		return CacheManager.getInstance().get(uri);
+	}
+
+	private static Content downloadAndCache(String uri) throws IOException {
+		Content content = Downloader.download(uri);
+		CacheManager.getInstance().put(uri, content);
+		return content;
+	}
+
+	public static Content getSegment(String segmentUri) throws IOException, InterruptedException {
+		Content content = getFromCache(segmentUri);
+
+		if (content != null) {
+			return content;
+		}
+
+		String baseUri = segmentUri.substring(0, segmentUri.lastIndexOf('/') + 1);
+		String targetFile = segmentUri.substring(segmentUri.lastIndexOf('/') + 1);
+
+		SegmentData data = SegmentManager.getInstance().get(baseUri);
+		Segment segment = data.getSegment(targetFile);
+
+		String usefulSegmentUri = usefulSegmentUriOrNull(baseUri, segment);
+		if (usefulSegmentUri == null) {
+			return downloadAndCache(segmentUri);
+		}
+
+		content = transcodeAndCache(usefulSegmentUri, targetFile);
+		CacheManager.getInstance().put(segmentUri, content);
+		return content;
+	}
+
+	private static String usefulSegmentUriOrNull(String baseUri, Segment current) {
+		current = current.next;
+
+		while (current != null) {
+			if (CacheManager.getInstance().contains(baseUri + current))
+				return baseUri + current;
+
+			current = current.next;
+		}
+
+		return null;
+	}
+
+	private static Content transcodeAndCache(String segmentUri, String target)
+			throws IOException, InterruptedException {
+		String init = SegmentManager.getInitUri(segmentUri);
+
+		Content initContent = get(init);
+		Content segmentContent = getSegment(segmentUri);
+		Content content = DashTranscoder.transcode(initContent, segmentContent, target);
+
+		return content;
+	}
+
 }
