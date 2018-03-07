@@ -2,14 +2,14 @@ package chow.dan.bll;
 
 import java.util.concurrent.ConcurrentHashMap;
 
+import org.apache.commons.io.FilenameUtils;
+
+import chow.dan.bll.SegmentData.Segment;
+
 public class SegmentManager {
 
 	private static volatile SegmentManager manager = new SegmentManager();
 	private ConcurrentHashMap<String, SegmentData> uriDataMap;
-
-	public static String getInitUri(String segment) {
-		return segment.replaceFirst("-[0-9]+.m4s$", "-init.mp4");
-	}
 
 	private SegmentManager() {
 		uriDataMap = new ConcurrentHashMap<>();
@@ -33,5 +33,16 @@ public class SegmentManager {
 
 	public SegmentData get(String key) {
 		return uriDataMap.get(key);
+	}
+
+	public Segment getByUri(String segmentUri) {
+		String path = FilenameUtils.getPath(segmentUri);
+		String name = FilenameUtils.getName(segmentUri);
+
+		SegmentData data = SegmentManager.getInstance().get(path);
+		if (data == null)
+			return null;
+
+		return data.getSegment(name);
 	}
 }

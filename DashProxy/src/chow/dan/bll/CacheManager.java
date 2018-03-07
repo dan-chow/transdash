@@ -12,6 +12,7 @@ public class CacheManager {
 
 	private CacheManager() {
 		cacheAccess = JCS.getInstance("testCache1");
+		cacheAccess.clear();
 	}
 
 	public static CacheManager getInstance() {

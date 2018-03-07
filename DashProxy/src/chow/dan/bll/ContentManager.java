@@ -2,16 +2,24 @@ package chow.dan.bll;
 
 import java.io.IOException;
 
+import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+
 import chow.dan.bll.SegmentData.Segment;
 import chow.dan.common.Content;
 import chow.dan.dash.DashTranscoder;
 
 public class ContentManager {
 
+	private static Log logger = LogFactory.getLog(ContentManager.class);
+
 	public static Content get(String uri) throws IOException {
 		Content content = getFromCache(uri);
 		if (content == null) {
 			content = downloadAndCache(uri);
+		} else {
+			logger.warn("hit:" + uri);
 		}
 		return content;
 	}
@@ -21,6 +29,8 @@ public class ContentManager {
 	}
 
 	private static Content downloadAndCache(String uri) throws IOException {
+		logger.warn("download:" + uri);
+
 		Content content = Downloader.download(uri);
 		CacheManager.getInstance().put(uri, content);
 		return content;
@@ -33,44 +43,55 @@ public class ContentManager {
 			return content;
 		}
 
-		String baseUri = segmentUri.substring(0, segmentUri.lastIndexOf('/') + 1);
-		String targetFile = segmentUri.substring(segmentUri.lastIndexOf('/') + 1);
-
-		SegmentData data = SegmentManager.getInstance().get(baseUri);
-		Segment segment = data.getSegment(targetFile);
-
-		String usefulSegmentUri = usefulSegmentUriOrNull(baseUri, segment);
+		String usefulSegmentUri = usefulSegmentUriOrNull(segmentUri);
 		if (usefulSegmentUri == null) {
 			return downloadAndCache(segmentUri);
 		}
 
-		content = transcodeAndCache(usefulSegmentUri, targetFile);
+		content = transcodeAndCache(usefulSegmentUri, segmentUri);
 		CacheManager.getInstance().put(segmentUri, content);
+
 		return content;
 	}
 
-	private static String usefulSegmentUriOrNull(String baseUri, Segment current) {
-		current = current.next;
+	private static String usefulSegmentUriOrNull(String segmentUri) {
+		String path = FilenameUtils.getPath(segmentUri);
 
-		while (current != null) {
-			if (CacheManager.getInstance().contains(baseUri + current))
-				return baseUri + current;
+		Segment segment = SegmentManager.getInstance().getByUri(segmentUri);
+		if (segment == null)
+			return null;
 
-			current = current.next;
+		segment = segment.next;
+
+		while (segment != null) {
+			String next = FilenameUtils.concat(path, segment.name);
+			if (CacheManager.getInstance().contains(next))
+				return next;
+
+			segment = segment.next;
 		}
 
 		return null;
 	}
 
-	private static Content transcodeAndCache(String segmentUri, String target)
+	private static Content transcodeAndCache(String segmentUri, String targetSegmentUri)
 			throws IOException, InterruptedException {
-		String init = SegmentManager.getInitUri(segmentUri);
 
-		Content initContent = get(init);
+		logger.warn("transcode:" + segmentUri + " to " + targetSegmentUri);
+		String initSegmentUri = getInitUriForSegment(segmentUri);
+
+		String targetName = FilenameUtils.getName(targetSegmentUri);
+
+		Content initContent = get(initSegmentUri);
 		Content segmentContent = getSegment(segmentUri);
-		Content content = DashTranscoder.transcode(initContent, segmentContent, target);
+		Content content = DashTranscoder.transcode(initContent, segmentContent, targetName);
+		CacheManager.getInstance().put(targetSegmentUri, content);
 
 		return content;
+	}
+
+	private static String getInitUriForSegment(String segmentUri) {
+		return segmentUri.replaceFirst("-[0-9]+.m4s$", "-init.mp4");
 	}
 
 }

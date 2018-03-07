@@ -15,11 +15,6 @@ public class Main {
 
 	public static void main(String[] args) {
 
-		try {
-			testTranscode();
-		} catch (IOException | InterruptedException e) {
-			e.printStackTrace();
-		}
 	}
 
 	public static void testEncode() throws IOException, InterruptedException {

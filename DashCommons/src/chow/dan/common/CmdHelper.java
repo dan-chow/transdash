@@ -34,7 +34,7 @@ public class CmdHelper {
 			return error;
 		}
 
-		public CmdResult(Process process) throws InterruptedException, IOException {
+		public CmdResult(Process process) throws IOException {
 			output = IOUtils.toString(process.getInputStream(), "UTF-8");
 			error = IOUtils.toString(process.getErrorStream(), "UTF-8");
 		}
