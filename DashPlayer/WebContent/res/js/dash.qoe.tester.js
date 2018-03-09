@@ -2,39 +2,79 @@ var events = dashjs.MediaPlayer.events;
 
 var videoTag = {};
 var buttonTag = {};
-
 var player = {};
 
-
 var videoSource = "http://114.212.84.179:8080/video/result.mpd";
-var isAutoPlay = false;
 
-var trueUrl = "http://114.212.84.179:8080/video/";
-var proxyUrl='http://114.212.85.243:8080/DashProxy/proxy?url='
+var trueUrl = "http://114.212.84.179:8080/video/{0}";
+var proxyUrl = "http://114.212.85.243:8080/DashProxy/proxy?url={0}&trans={1}";
+var controlUrl = "http://114.212.85.243:8080/DashProxy/control";
+
+var trans = true;
+var testName = "testWithTrans";
 
 function init() {
-
 	(function(open) {
 		XMLHttpRequest.prototype.open = function() {
-			var file = trueUrl + arguments[1].substring(arguments[1].lastIndexOf('/') + 1);
-			arguments[1] = proxyUrl + encodeURIComponent(file);
+			if(arguments[0] == 'GET'){
+				var file = trueUrl.format(arguments[1].substring(arguments[1].lastIndexOf('/') + 1));
+				arguments[1] = proxyUrl.format(encodeURIComponent(file), trans);
+			}
 			open.apply(this, arguments);
 		};
 	})(XMLHttpRequest.prototype.open);
 
+	if (!String.prototype.format) {
+		String.prototype.format = function() {
+			var args = arguments;
+			return this.replace(/{(\d+)}/g, function(match, number) { 
+				return typeof args[number] != 'undefined'
+					? args[number]
+					: match
+				;
+			});
+		};
+	}
+}
 
-	videoTag = document.getElementById("videoTag");
-	buttonTag = document.getElementById("buttonTag");
+function startTest() {
+	document.getElementById("buttonTag").disabled = true;
+	
+	startTestPost();
+	playAndRecord(1);
+}
+
+function startTestPost(){
+	var data = {};
+	data["testName"] = testName;
+	data["op"] = "start";
+	var xhr = new XMLHttpRequest();
+	xhr.open("POST", controlUrl);
+	xhr.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
+	xhr.send(JSON.stringify(data));
+}
+
+function endTestPost(){
+	var data = {};
+	data["testName"] = testName;
+	data["op"] = "end";
+	var xhr = new XMLHttpRequest();
+	xhr.open("POST", controlUrl);
+	xhr.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
+	xhr.send(JSON.stringify(data));
+}
+
+function playAndRecord(count){
+	if(count > 10) {
+		endTestPost();
+		return;
+	}
 
 	player = dashjs.MediaPlayer().create();
 	player.getDebug().setLogToBrowserConsole(false);
 	player.initialize();
-	player.setAutoPlay(isAutoPlay);
-	player.attachView(videoTag);
-}
-
-function start() {
-	buttonTag.disabled = true;
+	player.setAutoPlay(false);
+	player.attachView(document.getElementById("videoTag"));
 
 	var stalls = [];
 	var time = performance.now();
@@ -87,10 +127,29 @@ function start() {
 			avgStallDuration = mean(stalls);
 		}
 		console.log("avgStallDuration:" + avgStallDuration);
+
+		uploadStatsPost(videoQualities, stalls);
+
+		player.reset();
+
+		playAndRecord(count + 1);
 	});
 
 	player.attachSource(videoSource);
 	player.play();
+}
+
+function uploadStatsPost(qualities, stalls){
+	var data = {};
+	data["testName"] = testName;
+	data["op"] = "upload";
+	data["statistic"] = {};
+	data["statistic"]["qualities"] = qualities;
+	data["statistic"]["stalls"] = stalls;
+	var xhr = new XMLHttpRequest();
+	xhr.open("POST", controlUrl.format(testName, 'upload'));
+	xhr.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
+	xhr.send(JSON.stringify(data));
 }
 
 function mean(arr) {
