@@ -27,6 +27,10 @@ public class CacheManager {
 		return manager;
 	}
 
+	public void clear() {
+		cacheAccess.clear();
+	}
+
 	public boolean contains(String key) {
 		return cacheAccess.get(key) != null;
 	}

@@ -5,6 +5,8 @@ import java.io.UnsupportedEncodingException;
 
 public class Content implements Serializable {
 
+	public final static Content EMPTY = new Content(new byte[0]);
+
 	private static final long serialVersionUID = 1L;
 	byte[] data;
 

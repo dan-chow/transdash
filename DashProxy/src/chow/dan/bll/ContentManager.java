@@ -12,14 +12,16 @@ import chow.dan.dash.DashTranscoder;
 
 public class ContentManager {
 
+	public static int SEG_HIT_RAW = 0;
+	public static int SEG_HIT_TRANS = 0;
+	public static int SEG_REQUEST = 0;
+
 	private static Log logger = LogFactory.getLog(ContentManager.class);
 
 	public static Content get(String uri) throws IOException {
 		Content content = getFromCache(uri);
 		if (content == null) {
 			content = downloadAndCache(uri);
-		} else {
-			logger.warn("hit:" + uri);
 		}
 		return content;
 	}
@@ -29,29 +31,40 @@ public class ContentManager {
 	}
 
 	private static Content downloadAndCache(String uri) throws IOException {
-		logger.warn("download:" + uri);
-
 		Content content = Downloader.download(uri);
 		CacheManager.getInstance().put(uri, content);
 		return content;
 	}
 
-	public static Content getSegment(String segmentUri) throws IOException, InterruptedException {
-		Content content = getFromCache(segmentUri);
+	public static Content getSegmentWithTrans(String segmentUri) throws IOException, InterruptedException {
+		SEG_REQUEST++;
 
+		Content content = getFromCache(segmentUri);
 		if (content != null) {
+			SEG_HIT_RAW++;
 			return content;
 		}
 
 		String usefulSegmentUri = usefulSegmentUriOrNull(segmentUri);
-		if (usefulSegmentUri == null) {
-			return downloadAndCache(segmentUri);
+		if (usefulSegmentUri != null) {
+			SEG_HIT_TRANS++;
+			return transcodeAndCache(usefulSegmentUri, segmentUri);
 		}
 
-		content = transcodeAndCache(usefulSegmentUri, segmentUri);
-		CacheManager.getInstance().put(segmentUri, content);
+		return downloadAndCache(segmentUri);
 
-		return content;
+	}
+
+	public static Content getSegmentWithoutTrans(String segmentUri) throws IOException, InterruptedException {
+		SEG_REQUEST++;
+
+		Content content = getFromCache(segmentUri);
+		if (content != null) {
+			SEG_HIT_RAW++;
+			return content;
+		}
+
+		return content = downloadAndCache(segmentUri);
 	}
 
 	private static String usefulSegmentUriOrNull(String segmentUri) {
@@ -83,7 +96,7 @@ public class ContentManager {
 		String targetName = FilenameUtils.getName(targetSegmentUri);
 
 		Content initContent = get(initSegmentUri);
-		Content segmentContent = getSegment(segmentUri);
+		Content segmentContent = getSegmentWithTrans(segmentUri);
 		Content content = DashTranscoder.transcode(initContent, segmentContent, targetName);
 		CacheManager.getInstance().put(targetSegmentUri, content);
 
