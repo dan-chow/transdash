@@ -20,6 +20,7 @@ import org.apache.commons.logging.LogFactory;
 import com.google.gson.Gson;
 
 import chow.dan.bll.CacheManager;
+import chow.dan.bll.ContentManager;
 import chow.dan.bll.PostData;
 import chow.dan.bll.Statistic;
 
@@ -40,6 +41,13 @@ public class TestController extends HttpServlet {
 		if ("start".equals(op)) {
 			prepareForTest(testName);
 			logger.warn("start");
+		} else if ("preparecache".equals(op)) {
+			CacheManager.getInstance().clear();
+			for (int i = 0; i < 300; i++) {
+				String url = "http://114.212.84.179:8080/video/5-" + i + ".m4s";
+				ContentManager.downloadAndCache(url);
+			}
+			logger.warn("preparecache");
 		} else if ("upload".equals(op)) {
 			saveStatistic(testName, postData.getStatistic());
 		} else if ("end".equals(op)) {
@@ -66,7 +74,6 @@ public class TestController extends HttpServlet {
 	}
 
 	private void prepareForTest(String testName) {
-		CacheManager.getInstance().clear();
 		map.put(testName, new ArrayList<>());
 	}
 
@@ -77,22 +84,17 @@ public class TestController extends HttpServlet {
 	private void writeToFile(String testName) throws IOException {
 		List<Statistic> statistics = map.get(testName);
 
-		StringBuilder avgVideoQuality = new StringBuilder("avgVideoQuality");
-		StringBuilder avgQualityVariations = new StringBuilder("avgQualityVariations");
-		StringBuilder stallFrequency = new StringBuilder("stallFrequency");
-		StringBuilder avgStallDuration = new StringBuilder("avgStallDuration");
-		for (Statistic statistic : statistics) {
-			avgVideoQuality.append(" ").append(statistic.avgVideoQuality());
-			avgQualityVariations.append(" ").append(statistic.avgQualityVariations());
-			stallFrequency.append(" ").append(statistic.stallFrequency());
-			avgStallDuration.append(" ").append(statistic.avgStallDuration());
-		}
+		File file = new File(testName + ".csv");
 
-		File file = new File(testName);
-		FileUtils.write(file, avgVideoQuality, "UTF-8", true);
-		FileUtils.write(file, avgQualityVariations, "UTF-8", true);
-		FileUtils.write(file, stallFrequency, "UTF-8", true);
-		FileUtils.write(file, avgStallDuration, "UTF-8", true);
+		String header = "avg quality,avg quality variation,stall frequency,avg stall time\n";
+		FileUtils.write(file, header, "UTF-8", true);
+
+		String line = null;
+		for (Statistic statistic : statistics) {
+			line = statistic.avgVideoQuality() + "," + statistic.avgQualityVariations() + ","
+					+ statistic.stallFrequency() + "," + statistic.avgStallDuration() + "\n";
+			FileUtils.write(file, line, "UTF-8", true);
+		}
 	}
 
 	private void cleanUpTest(String testName) {

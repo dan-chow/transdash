@@ -30,7 +30,7 @@ public class ContentManager {
 		return CacheManager.getInstance().get(uri);
 	}
 
-	private static Content downloadAndCache(String uri) throws IOException {
+	public static Content downloadAndCache(String uri) throws IOException {
 		Content content = Downloader.download(uri);
 		CacheManager.getInstance().put(uri, content);
 		return content;

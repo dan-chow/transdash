@@ -12,7 +12,7 @@ import chow.dan.common.FileHelper;
 
 public class DashTranscoder {
 
-	private static String TRANSCODE_SH = "/home/server/repo/transdash/DashCommons/res/transcode_dash.sh";
+	private static String TRANSCODE_SH = "/home/dan/transdash/DashCommons/res/transcode_dash.sh";
 
 	public static Content transcode(Content initSegment, Content segment, String targetSegmentName)
 			throws IOException, InterruptedException {
