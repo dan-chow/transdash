@@ -31,7 +31,7 @@ ffmpeg -loglevel panic -i $validMp4 -x264opts 'keyint=48:min-keyint=48:no-scenec
 rm $validMp4
 
 
-MP4Box -noprog -quiet -dash 4000 -frag 4000 -rap -out 'result.mpd' -bs-switching no \
+MP4Box -noprog -quiet -dash 2000 -frag 2000 -rap -out 'result.mpd' -bs-switching no \
 	-segment-name '$Init=init$' $transMp4
 
 rm $transMp4

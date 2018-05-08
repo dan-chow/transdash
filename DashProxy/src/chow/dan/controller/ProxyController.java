@@ -49,7 +49,7 @@ public class ProxyController extends HttpServlet {
 		os.close();
 	}
 
-	private Content getAndProcessMpd(String url) {
+	public static Content getAndProcessMpd(String url) {
 		try {
 			Content content = ContentManager.get(url);
 			MPD mpd = MpdManager.parseMpd(content);
@@ -63,7 +63,7 @@ public class ProxyController extends HttpServlet {
 
 	}
 
-	private Content getInitMp4(String url) {
+	public static Content getInitMp4(String url) {
 		try {
 			return ContentManager.get(url);
 		} catch (IOException e) {
@@ -81,10 +81,10 @@ public class ProxyController extends HttpServlet {
 		}
 	}
 
-	private Content getSegmentWithoutTrans(String url) {
+	public static Content getSegmentWithoutTrans(String url) {
 		try {
-			return ContentManager.get(url);
-		} catch (IOException e) {
+			return ContentManager.getSegmentWithoutTrans(url);
+		} catch (IOException | InterruptedException e) {
 			logger.warn(e);
 			return new Content(new byte[0]);
 		}

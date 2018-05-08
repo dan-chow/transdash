@@ -3,5 +3,5 @@ build/
 
 .classpath
 .project
-/jcs_swap/
+jcs_swap/
 /bin/
