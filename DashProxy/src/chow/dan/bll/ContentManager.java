@@ -57,7 +57,7 @@ public class ContentManager {
 		if (usefulSegmentUri != null) {
 			logger.warn("trans from " + usefulSegmentUri + " to " + segmentUri);
 			SEG_HIT_TRANS++;
-			return transcodeAndCache(usefulSegmentUri, segmentUri);
+			return fakeTranscodeAndCache(usefulSegmentUri, segmentUri);
 		}
 
 		return downloadAndCache(segmentUri);
@@ -96,10 +96,8 @@ public class ContentManager {
 		return null;
 	}
 
-	private static Content transcodeAndCache(String segmentUri, String targetSegmentUri)
+	public static Content transcodeAndCache(String segmentUri, String targetSegmentUri)
 			throws IOException, InterruptedException {
-
-		logger.warn("transcode:" + segmentUri + " to " + targetSegmentUri);
 		String initSegmentUri = getInitUriForSegment(segmentUri);
 
 		String targetName = FilenameUtils.getName(targetSegmentUri);
@@ -107,6 +105,15 @@ public class ContentManager {
 		Content initContent = get(initSegmentUri);
 		Content segmentContent = getFromCache(segmentUri);
 		Content content = DashTranscoder.transcode(initContent, segmentContent, targetName);
+		CacheManager.getInstance().put(targetSegmentUri, content);
+
+		return content;
+	}
+
+	public static Content fakeTranscodeAndCache(String segmentUri, String targetSegmentUri)
+			throws IOException, InterruptedException {
+
+		Content content = DashTranscoder.fakeTranscode(segmentUri, targetSegmentUri);
 		CacheManager.getInstance().put(targetSegmentUri, content);
 
 		return content;

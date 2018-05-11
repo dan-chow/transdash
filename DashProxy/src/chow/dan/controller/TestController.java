@@ -47,6 +47,7 @@ public class TestController extends HttpServlet {
 		} else if ("precache".equals(op)) {
 			CacheManager.getInstance().clear();
 			preCache();
+			ContentManager.clearCounters();
 			logger.warn("precache");
 			resp.getWriter().write("precache ok");
 		} else if ("upload".equals(op)) {

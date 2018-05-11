@@ -44,6 +44,10 @@ public class ProxyController extends HttpServlet {
 
 		response.setHeader("Accept-Ranges", "bytes");
 		response.setContentLength(content.getData().length);
+
+		String fileName = FilenameUtils.getName(url);
+		response.addHeader("Content-Disposition", "attachment; filename=" + fileName);
+
 		ServletOutputStream os = response.getOutputStream();
 		os.write(content.getData());
 		os.close();
