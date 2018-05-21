@@ -27,6 +27,10 @@ public class SegmentManager {
 		return manager;
 	}
 
+	public void clear() {
+		uriDataMap.clear();
+	}
+
 	public void put(String key, SegmentData data) {
 		uriDataMap.put(key, data);
 	}

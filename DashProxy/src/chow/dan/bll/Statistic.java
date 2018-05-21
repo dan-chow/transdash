@@ -7,6 +7,9 @@ import com.google.gson.Gson;
 public class Statistic {
 	private List<Integer> qualities;
 	private List<Double> stalls;
+	public int totalRequest;
+	public int hitRaw;
+	public int hitTrans;
 
 	public static Statistic fromJsonString(String jsonString) {
 		Gson gson = new Gson();

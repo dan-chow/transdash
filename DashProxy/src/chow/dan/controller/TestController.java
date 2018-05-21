@@ -20,6 +20,7 @@ import org.apache.commons.logging.LogFactory;
 import com.google.gson.Gson;
 
 import chow.dan.bll.CacheManager;
+import chow.dan.bll.ContentManager;
 import chow.dan.bll.PostData;
 import chow.dan.bll.Statistic;
 
@@ -35,17 +36,29 @@ public class TestController extends HttpServlet {
 	protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
 
 		PostData postData = getPostData(req);
-		String op = postData.getOp();
+
 		String testName = postData.getTestName();
+		String op = postData.getOp();
+
 		if ("start".equals(op)) {
 			prepareForTest(testName);
 			logger.warn("start");
+			resp.getWriter().write("start ok");
+		} else if ("precache".equals(op)) {
+			CacheManager.getInstance().clear();
+			preCache();
+			ContentManager.clearCounters();
+			logger.warn("precache");
+			resp.getWriter().write("precache ok");
 		} else if ("upload".equals(op)) {
 			saveStatistic(testName, postData.getStatistic());
-		} else if ("end".equals(op)) {
+			logger.warn("upload");
+			resp.getWriter().write("upload ok");
+		} else if ("stop".equals(op)) {
 			writeToFile(testName);
 			cleanUpTest(testName);
-			logger.warn("end");
+			logger.warn("stop");
+			resp.getWriter().write("stop ok");
 		}
 
 		resp.setContentType("text/plain");
@@ -66,36 +79,48 @@ public class TestController extends HttpServlet {
 	}
 
 	private void prepareForTest(String testName) {
-		CacheManager.getInstance().clear();
+		ContentManager.clearCounters();
 		map.put(testName, new ArrayList<>());
 	}
 
+	private void preCache() throws IOException {
+		ProxyController.getAndProcessMpd("http://114.212.84.179:8080/videos/result.mpd");
+		ProxyController.getInitMp4("http://114.212.84.179:8080/videos/5-init.mp4");
+		for (int i = 1; i <= 74; i++) {
+			String url = "http://114.212.84.179:8080/videos/5-" + i + ".m4s";
+			ProxyController.getSegmentWithoutTrans(url);
+		}
+	}
+
 	private void saveStatistic(String testName, Statistic statistic) throws IOException {
+
+		statistic.totalRequest = ContentManager.SEG_REQUEST;
+		statistic.hitRaw = ContentManager.SEG_HIT_RAW;
+		statistic.hitTrans = ContentManager.SEG_HIT_TRANS;
+
 		map.get(testName).add(statistic);
+		ContentManager.clearCounters();
 	}
 
 	private void writeToFile(String testName) throws IOException {
 		List<Statistic> statistics = map.get(testName);
 
-		StringBuilder avgVideoQuality = new StringBuilder("avgVideoQuality");
-		StringBuilder avgQualityVariations = new StringBuilder("avgQualityVariations");
-		StringBuilder stallFrequency = new StringBuilder("stallFrequency");
-		StringBuilder avgStallDuration = new StringBuilder("avgStallDuration");
-		for (Statistic statistic : statistics) {
-			avgVideoQuality.append(" ").append(statistic.avgVideoQuality());
-			avgQualityVariations.append(" ").append(statistic.avgQualityVariations());
-			stallFrequency.append(" ").append(statistic.stallFrequency());
-			avgStallDuration.append(" ").append(statistic.avgStallDuration());
-		}
+		File file = new File(testName + ".csv");
 
-		File file = new File(testName);
-		FileUtils.write(file, avgVideoQuality, "UTF-8", true);
-		FileUtils.write(file, avgQualityVariations, "UTF-8", true);
-		FileUtils.write(file, stallFrequency, "UTF-8", true);
-		FileUtils.write(file, avgStallDuration, "UTF-8", true);
+		String header = "avg quality,avg quality variation,stall frequency,avg stall time,total request,hit raw,hit trans\n";
+		FileUtils.write(file, header, "UTF-8", true);
+
+		String line = null;
+		for (Statistic statistic : statistics) {
+			line = statistic.avgVideoQuality() + "," + statistic.avgQualityVariations() + ","
+					+ statistic.stallFrequency() + "," + statistic.avgStallDuration() + "," + statistic.totalRequest
+					+ "," + statistic.hitRaw + "," + statistic.hitTrans + "\n";
+			FileUtils.write(file, line, "UTF-8", true);
+		}
 	}
 
 	private void cleanUpTest(String testName) {
 		map.remove(testName);
+		ContentManager.clearCounters();
 	}
 }

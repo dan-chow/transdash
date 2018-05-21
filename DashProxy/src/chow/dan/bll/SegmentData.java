@@ -41,6 +41,8 @@ public class SegmentData {
 				prev = prev.next;
 			}
 		}
+
+		System.out.println();
 	}
 
 	public Segment getSegment(String key) {
