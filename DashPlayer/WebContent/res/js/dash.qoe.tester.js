@@ -4,14 +4,14 @@ var videoTag = {};
 var buttonTag = {};
 var player = {};
 
-var videoSource = "http://114.212.84.179:8080/video/result.mpd";
+var videoSource = "http://114.212.81.29:8080/DashProxy/result.mpd";
 
-var trueUrl = "http://114.212.84.179:8080/video/{0}";
-var proxyUrl = "http://114.212.85.243:8080/DashProxy/proxy?url={0}&trans={1}";
-var controlUrl = "http://114.212.85.243:8080/DashProxy/control";
+var trueUrl = "http://114.212.84.179:8080/videos/{0}";
+var proxyUrl = "http://114.212.81.29:8080/DashProxy/proxy?url={0}&trans={1}";
+var controlUrl = "http://114.212.81.29:8080/DashProxy/control";
 
 var trans = true;
-var testName = "testWithTrans";
+var testName = "testTrans5";
 
 function init() {
 	(function(open) {
@@ -19,6 +19,7 @@ function init() {
 			if(arguments[0] == 'GET'){
 				var file = trueUrl.format(arguments[1].substring(arguments[1].lastIndexOf('/') + 1));
 				arguments[1] = proxyUrl.format(encodeURIComponent(file), trans);
+				// console.log(arguments);
 			}
 			open.apply(this, arguments);
 		};
@@ -27,7 +28,7 @@ function init() {
 	if (!String.prototype.format) {
 		String.prototype.format = function() {
 			var args = arguments;
-			return this.replace(/{(\d+)}/g, function(match, number) { 
+			return this.replace(/{(\d+)}/g, function(match, number) {
 				return typeof args[number] != 'undefined'
 					? args[number]
 					: match
@@ -39,34 +40,11 @@ function init() {
 
 function startTest() {
 	document.getElementById("buttonTag").disabled = true;
-	
-	startTestPost();
 	playAndRecord(1);
 }
 
-function startTestPost(){
-	var data = {};
-	data["testName"] = testName;
-	data["op"] = "start";
-	var xhr = new XMLHttpRequest();
-	xhr.open("POST", controlUrl);
-	xhr.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
-	xhr.send(JSON.stringify(data));
-}
-
-function endTestPost(){
-	var data = {};
-	data["testName"] = testName;
-	data["op"] = "end";
-	var xhr = new XMLHttpRequest();
-	xhr.open("POST", controlUrl);
-	xhr.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
-	xhr.send(JSON.stringify(data));
-}
-
 function playAndRecord(count){
-	if(count > 10) {
-		endTestPost();
+	if(count > 5) {
 		return;
 	}
 
@@ -75,6 +53,8 @@ function playAndRecord(count){
 	player.initialize();
 	player.setAutoPlay(false);
 	player.attachView(document.getElementById("videoTag"));
+	// abrDynamic/abrBola/abrThroughput
+	player.setABRStrategy("abrThroughput");
 
 	var stalls = [];
 	var time = performance.now();
